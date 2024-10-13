@@ -141,6 +141,14 @@
         }
         .calendar-day.logged {
             font-weight: bold;
+            background-color: #e1bee7;
+        }
+        .calendar-day.not-logged {
+            color: #999;
+        }
+        .calendar-day.future {
+            color: #ccc;
+            cursor: not-allowed;
         }
         .mood-section {
             background-color: white;
@@ -314,20 +322,25 @@
                 dayElement.classList.add('calendar-day', 'active');
                 dayElement.textContent = day;
 
-                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
-                    dayElement.classList.add('current');
-                }
-                
                 const fullDate = new Date(year, month, day);
-                if (loggedDays.some(d => d.getTime() === fullDate.getTime())) {
+                
+                if (fullDate > today) {
+                    dayElement.classList.add('future');
+                } else if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                    dayElement.classList.add('current', 'logged');
+                } else if (loggedDays.some(d => d.getTime() === fullDate.getTime())) {
                     dayElement.classList.add('logged');
+                } else {
+                    dayElement.classList.add('not-logged');
                 }
 
-                dayElement.addEventListener('click', () => selectDate(new Date(year, month, day)));
+                if (!dayElement.classList.contains('future')) {
+                    dayElement.addEventListener('click', () => selectDate(new Date(year, month, day)));
+                }
                 calendarGrid.appendChild(dayElement);
             }
 
-            updateDashboard(new Date(year, month, today.getDate()));
+            updateDashboard(today);
         }
 
         function selectDate(date) {
@@ -336,14 +349,20 @@
 
         function updateDashboard(date) {
             document.getElementById('selected-date').textContent = date.toDateString();
-            const checkInCount = loggedDays.length;
+            const checkInCount = 6; // Set to 6 as requested
             document.getElementById('mood-number').textContent = checkInCount;
             
-            // Update other dashboard elements (this is placeholder content)
-            document.getElementById('mood-description').textContent = `You've checked in ${checkInCount} times this month.`;
-            document.getElementById('gratitude-diary').textContent = "You shared three things you're grateful for this week: seeing birds, enjoying nice weather, and a random woman being kind to you this morning.";
-            document.getElementById('notes-list').innerHTML = "<li>Family Disagreement: We discussed how your parents' opposition to gay marriage has been disappointing and hurtful for you, contributing to feelings of depression.</li><li>Coping with Depression: You mentioned that your depression made you feel like staying in bed all day and avoiding conversations with friends, even though you love them.</li><li>Support Strategies: We explored a few ways to help you cope, including journaling, connecting with nature (since you enjoy seeing birds), and possibly reaching out to a trusted adult for support.</li>"
-            document.getElementById('next-steps').textContent = "Age and Limited Support: You shared that, at 14, you feel there aren't many people to talk to, but you're open to exploring small steps to help yourself feel better.";
+            if (loggedDays.some(d => d.toDateString() === date.toDateString()) || date.toDateString() === new Date().toDateString()) {
+                document.getElementById('mood-description').textContent = `You've checked in ${checkInCount} times this month.`;
+                document.getElementById('gratitude-diary').textContent = "You shared three things you're grateful for this week: seeing birds, enjoying nice weather, and a random woman being kind to you this morning.";
+                document.getElementById('notes-list').innerHTML = "<li>Family Disagreement: We discussed how your parents' opposition to gay marriage has been disappointing and hurtful for you, contributing to feelings of depression.</li><li>Coping with Depression: You mentioned that your depression made you feel like staying in bed all day and avoiding conversations with friends, even though you love them.</li><li>Support Strategies: We explored a few ways to help you cope, including journaling, connecting with nature (since you enjoy seeing birds), and possibly reaching out to a trusted adult for support.</li>";
+                document.getElementById('next-steps').textContent = "Age and Limited Support: You shared that, at 14, you feel there aren't many people to talk to, but you're open to exploring small steps to help yourself feel better.";
+            } else {
+                document.getElementById('mood-description').textContent = "You didn't check in on this day.";
+                document.getElementById('gratitude-diary').textContent = "No gratitude entry for this day.";
+                document.getElementById('notes-list').innerHTML = "<li>No notes for this day.</li>";
+                document.getElementById('next-steps').textContent = "Consider checking in regularly to track your mood and progress.";
+            }
         }
 
         document.getElementById('prev-month').addEventListener('click', () => {
@@ -356,10 +375,16 @@
             updateCalendar();
         });
 
-        // Simulate logged days (replace with actual data in a real application)
-        for (let i = 1; i <= 7; i++) {
-            const randomDay = Math.floor(Math.random() * 28) + 1;
-            loggedDays.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), randomDay));
+        // Set logged days to include today and 5 other days this month
+        const today = new Date();
+        loggedDays.push(today);
+        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        while (loggedDays.length < 6) {
+            const randomDay = Math.floor(Math.random() * (today.getDate() - 1)) + 1;
+            const randomDate = new Date(today.getFullYear(), today.getMonth(), randomDay);
+            if (!loggedDays.some(d => d.getTime() === randomDate.getTime())) {
+                loggedDays.push(randomDate);
+            }
         }
 
         updateCalendar();
