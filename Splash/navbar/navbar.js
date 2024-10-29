@@ -26,6 +26,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     break;
                 }
             }
+
+            const hamburgerButton = document.querySelector(".header__hamburger");
+            const navLinksContainer = document.querySelector(".nav-links");
+            
+            hamburgerButton.addEventListener("click", function () {
+                navLinksContainer.classList.toggle("nav-links--active");
+            });
         })
         .catch((error) => console.error("Error loading navbar:", error));
+
 });
